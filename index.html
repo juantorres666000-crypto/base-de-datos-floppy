@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eletroflips Neon Dashboard</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <span class="sidebar-logo">⚡</span>
+                <h1 class="sidebar-title">Eletroflips</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li class="active"><span>👥</span> Clientes</li>
+                    <li><span>📦</span> Pedidos</li>
+                    <li><span>🪪</span> Fidelidad</li>
+                    <li><span>🔔</span> Alertas</li>
+                    <li><span>✉️</span> Plantillas</li>
+                </ul>
+            </nav>
+            <div class="sidebar-footer">
+                <small>Neon System v1</small>
+            </div>
+        </aside>
+        <!-- Main -->
+        <main class="main-content">
+            <header class="main-header">
+                <h2>Clientes</h2>
+                <button class="neon-btn" id="addClientBtn">+ Agregar Cliente</button>
+            </header>
+            <section class="dashboard-section" id="clientsList">
+                <!-- Tarjetas de clientes generadas por JS -->
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal: Agregar/Editar Cliente (el mismo que antes) -->
+    <div class="modal-bg" id="modalBg">
+        <div class="modal" id="addClientModal">
+            <h3 id="modalTitle">Agregar Cliente</h3>
+            <form id="clientForm" autocomplete="off">
+                <label>Nombre
+                    <input type="text" id="clientName" required placeholder="Nombre completo">
+                </label>
+                <label>Celular
+                    <input type="tel" id="clientPhone" required placeholder="+54 9 1123456789">
+                </label>
+                <label>Email
+                    <input type="email" id="clientEmail" required placeholder="mail@email.com">
+                </label>
+                <div class="modal-actions">
+                    <button type="button" class="neon-btn-sm outline" id="closeModalBtn">Cancelar</button>
+                    <button type="submit" class="neon-btn-sm" id="saveClientBtn">Agregar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Modal para confirmar eliminación -->
+    <div class="modal-bg" id="deleteModalBg">
+        <div class="modal">
+            <h3 style="color:#ff44cc">¿Eliminar cliente?</h3>
+            <p style="margin:1.7em 0 1.3em 0;">Esta acción no se puede deshacer.</p>
+            <div class="modal-actions">
+                <button type="button" class="neon-btn-sm outline" id="cancelDeleteBtn">Cancelar</button>
+                <button type="button" class="neon-btn-sm" id="confirmDeleteBtn" style="background:var(--neon-pink); color:white">Eliminar</button>
+            </div>
+        </div>
+    </div>
+    <!-- Panel Lateral: PEDIDOS de cliente -->
+    <div class="side-panel-bg" id="sidePanelBg">
+        <aside class="side-panel" id="sidePanel">
+            <header class="side-panel-header">
+                <h3 id="sidePanelTitle">Pedidos de Cliente</h3>
+                <button class="close-btn" id="closeSidePanel">&times;</button>
+            </header>
+            <nav class="panel-nav">
+                <button class="panel-tab active" id="tabOrders">Pedidos</button>
+                <button class="panel-tab" id="tabCard">Tarjeta</button>
+            </nav>
+            <section id="clientOrdersSection">
+                <div class="orders-list" id="ordersList"></div>
+                <button class="neon-btn" id="addOrderBtn" style="margin-top:2.3em">+ Agregar Pedido</button>
+            </section>
+            <section id="clientCardSection" style="display:none;">
+                <div class="fidelity-card-container" id="fidelityCardContainer">
+                    <!-- Selector de sello y upload imagen -->
+                    <div class="stamp-style-picker">
+                      <span>Estilo de sello:</span>
+                      <div class="stamp-style-options" id="stampStyleOptions"></div>
+                    </div>
+                    <label class="upload-card-bg neon-btn-sm outline">
+                        Subir imagen base
+                        <input type="file" id="uploadBgFile" accept="image/*" style="display:none;">
+                    </label>
+                    <div class="fidelity-card" id="fidelityCard">
+                        <img src="assets/card-base.png" class="card-bg-img" id="cardBgImg" alt="Tarjeta base">
+                        <div class="card-client-name" id="cardClientName" contenteditable="true"></div>
+                        <div class="stamps-container" id="stampsContainer"></div>
+                    </div>
+                    <div class="fidelity-actions">
+                        <button class="neon-btn-sm" id="exportCardBtn">Exportar como PNG</button>
+                        <button class="neon-btn-sm outline" id="sendCardWA">Enviar por WhatsApp</button>
+                    </div>
+                </div>
+            </section>
+        </aside>
+    </div>
+    <!-- Modal: Agregar/Editar Pedido -->
+    <div class="modal-bg" id="modalOrderBg">
+        <div class="modal" id="addOrderModal">
+            <h3 id="orderModalTitle">Agregar Pedido</h3>
+            <form id="orderForm" autocomplete="off">
+                <label>Correo/Perfil/PIN
+                    <input type="text" id="orderInfo" required placeholder="correo/perfil/PIN">
+                </label>
+                <label>Fecha de inicio
+                    <input type="date" id="orderStart" required>
+                </label>
+                <label>Fecha final
+                    <input type="date" id="orderEnd" required>
+                </label>
+                <label>Precio para ti
+                    <input type="number" id="orderPriceOwner" min="0" step="0.01" required placeholder="$">
+                </label>
+                <label>Precio cliente
+                    <input type="number" id="orderPriceClient" min="0" step="0.01" required placeholder="$">
+                </label>
+                <div class="modal-actions">
+                    <button type="button" class="neon-btn-sm outline" id="closeOrderModalBtn">Cancelar</button>
+                    <button type="submit" class="neon-btn-sm" id="saveOrderBtn">Agregar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <!-- Modal para confirmar eliminación Pedido -->
+    <div class="modal-bg" id="deleteOrderModalBg">
+        <div class="modal">
+            <h3 style="color:#ff44cc">¿Eliminar pedido?</h3>
+            <p style="margin:1.7em 0 1.3em 0;">Esta acción no se puede deshacer.</p>
+            <div class="modal-actions">
+                <button type="button" class="neon-btn-sm outline" id="cancelDeleteOrderBtn">Cancelar</button>
+                <button type="button" class="neon-btn-sm" id="confirmDeleteOrderBtn" style="background:var(--neon-pink); color:white">Eliminar</button>
+            </div>
+        </div>
+    </div>
+
+
+
+<!-- Firebase SDKs: -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script>
+  // TODO: Pega aquí tu configuración personalizada de Firebase
+const firebaseConfig = {
+  apiKey: "AIzaSyCaKAxxbNEhzx6TfcatCYu-qJyv6YW9KAI",
+  authDomain: "base-de-datos-40041.firebaseapp.com",
+  projectId: "base-de-datos-40041",
+  storageBucket: "base-de-datos-40041.firebasestorage.app",
+  messagingSenderId: "895791933815",
+  appId: "1:895791933815:web:69414ca224226ce72c5972",
+  measurementId: "G-V6WLHWENV8"
+};
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+</script>
+    <script src="app.js"></script>
+</body>
+</html>
