@@ -31,15 +31,83 @@
             </div>
         </aside>
         <!-- Main -->
-        <main class="main-content">
-            <header class="main-header">
-                <h2>Clientes</h2>
-                <button class="neon-btn" id="addClientBtn">+ Agregar Cliente</button>
-            </header>
-            <section class="dashboard-section" id="clientsList">
-                <!-- Tarjetas de clientes generadas por JS -->
-            </section>
-        </main>
+    <main class="main-content">
+  <div class="alerts-panel" id="alertsPanel"></div>
+  <header class="main-header">
+      <h2>Clientes</h2>
+      <button class="neon-btn" id="addClientBtn">+ Agregar Cliente</button>
+  </header>
+  <section class="dashboard-section" id="clientsList">
+      <!-- Tarjetas de clientes generadas por JS -->
+  </section>
+
+  <!-- SECCIÓN PEDIDOS -->
+  <section class="orders-section" id="ordersSection" style="display:none;">
+    <header class="main-header">
+      <h2>Pedidos</h2>
+      <input type="text" id="orderSearch" placeholder="Buscar pedido, cliente o perfil..." style="background:#181b25; color:#fff;border-radius:4px;border:1px solid #334;padding:.34em .59em; margin-left:.6em;">
+    </header>
+    <div id="ordersTableArea"></div>
+  </section>
+
+  <!-- SECCIÓN FIDELIDAD -->
+  <section class="fidelity-summary-section" id="fidelitySection" style="display:none;">
+    <header class="main-header">
+      <h2>Ranking Fidelidad</h2>
+    </header>
+    <div id="fidelityRankingArea"></div>
+  </section>
+
+  <!-- SECCIÓN ALERTAS -->
+  <section class="central-alerts-section" id="centralAlertsSection" style="display:none;">
+    <header class="main-header">
+      <h2>Alertas</h2>
+    </header>
+    <div id="centralAlertsArea"></div>
+  </section>
+
+  <!-- SECCIÓN PLANTILLAS: DEBE IR DENTRO DEL MAIN -->
+  <section class="template-section" id="templateSection" style="display:none;">
+    <header class="main-header">
+      <h2>Plantillas</h2>
+      <button class="neon-btn" id="addTemplateBtn">+ Nueva plantilla</button>
+    </header>
+    <div id="templateList"></div>
+  </section>
+</main> 
+
+
+
+<!-- Modal para agregar/editar plantilla -->
+<div class="modal-bg" id="modalTemplateBg">
+  <div class="modal">
+    <h3 id="templateModalTitle"></h3>
+    <form id="templateForm">
+      <label>Título
+        <input type="text" id="templateTitle" required maxlength="50">
+      </label>
+      <label>Mensaje
+        <textarea id="templateMsg" required style="width:100%;height:110px;"></textarea>
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="neon-btn-sm outline" id="cancelTemplateBtn">Cancelar</button>
+        <button type="submit" class="neon-btn-sm" id="saveTemplateBtn">Guardar</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+
+<!-- Modal para elegir cliente -->
+<div class="modal-bg" id="modalChooseClient" style="display:none;">
+  <div class="modal">
+    <h3>Selecciona el cliente</h3>
+    <div id="chooseClientList"></div>
+    <div class="modal-actions">
+      <button type="button" class="neon-btn-sm outline" id="cancelChooseClientBtn">Cancelar</button>
+    </div>
+  </div>
+</div>
     </div>
 
     <!-- Modal: Agregar/Editar Cliente (el mismo que antes) -->
@@ -113,13 +181,23 @@
             </section>
         </aside>
     </div>
+<!-- ... (contenido anterior del archivo) ... -->
     <!-- Modal: Agregar/Editar Pedido -->
     <div class="modal-bg" id="modalOrderBg">
         <div class="modal" id="addOrderModal">
             <h3 id="orderModalTitle">Agregar Pedido</h3>
             <form id="orderForm" autocomplete="off">
-                <label>Correo/Perfil/PIN
-                    <input type="text" id="orderInfo" required placeholder="correo/perfil/PIN">
+                <label>Servicio
+                    <input type="text" id="orderService" required placeholder="Nombre del servicio">
+                </label>
+                <label>Correo
+                    <input type="email" id="orderCorreo" required placeholder="mail@email.com">
+                </label>
+                <label>Perfil / User
+                    <input type="text" id="orderPerfil" required placeholder="@usuario123">
+                </label>
+                <label>PIN
+                    <input type="text" id="orderPin" required placeholder="PIN o código único">
                 </label>
                 <label>Fecha de inicio
                     <input type="date" id="orderStart" required>
@@ -140,6 +218,21 @@
             </form>
         </div>
     </div>
+
+<!-- Modal Ver pedido (nuevo) -->
+<div class="modal-bg" id="modalOrderViewBg">
+  <div class="modal" id="orderViewModal">
+    <h3 id="orderViewTitle">Detalle del pedido</h3>
+    <div id="orderViewContent" style="margin-top:.6em;"></div>
+    <div class="modal-actions" style="margin-top:1em;">
+      <button class="neon-btn-sm outline" id="orderViewCloseBtn">Cerrar</button>
+      <button class="neon-btn-sm" id="orderViewEditBtn">Editar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ... (resto del archivo) ... -->
     <!-- Modal para confirmar eliminación Pedido -->
     <div class="modal-bg" id="deleteOrderModalBg">
         <div class="modal">
