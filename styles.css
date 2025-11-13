@@ -830,6 +830,33 @@ body {
 
 
 
+/* Templates: grilla responsiva (varias tarjetas por fila) */
+#templateList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.1rem;
+  align-items: start;
+  margin-top: 1rem;
+}
+
+/* tarjeta específica para plantilla (si quieres control separado del .client-card) */
+.template-card {
+  padding: 1rem;
+  border-radius: 12px;
+  background: var(--card-bg);
+  box-shadow: 0 0 16px 0 var(--neon-blue)33;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+/* asegura que el botón "Enviar/Editar/Eliminar" quede alineado abajo */
+.template-card .client-actions {
+  margin-top: 0.6rem;
+  justify-content: flex-end;
+}
+
 
 
 
