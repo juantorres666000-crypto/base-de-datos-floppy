@@ -160,7 +160,7 @@ function renderAlertsPanel() {
     document.getElementById("alertsPanel").innerHTML = html;
 }
 
-// Ayuda para buscar el cliente por id y abrir el panel lateral (ahora abre modal centrado)
+// Ayuda para buscar el cliente por id y abrir el panel lateral
 window.showClientOrdersById = clienteId => {
     let i = clients.findIndex(c=>c.id===clienteId);
     if(i>=0) showClientOrders(i);
@@ -249,7 +249,6 @@ document.querySelectorAll('.sidebar-nav li').forEach(item => {
 });
 
 // ---- PEDIDOS (ORDERS) PANEL LATERAL ----
-// Nota: conservamos el side-panel en HTML por compatibilidad, pero ahora mostramos pedidos en modal centrado.
 const sidePanelBg = document.getElementById('sidePanelBg');
 const sidePanel = document.getElementById('sidePanel');
 const sidePanelTitle = document.getElementById('sidePanelTitle');
@@ -257,109 +256,27 @@ const closeSidePanel = document.getElementById('closeSidePanel');
 const ordersList = document.getElementById('ordersList');
 const addOrderBtn = document.getElementById('addOrderBtn');
 
-// Crear dinámicamente un modal centrado para listar pedidos del cliente si no existe
-function ensureClientOrdersModalExists() {
-    if (document.getElementById('modalClientOrders')) return;
-    const modalBgEl = document.createElement('div');
-    modalBgEl.className = 'modal-bg';
-    modalBgEl.id = 'modalClientOrders';
-    modalBgEl.style.display = 'none';
-    modalBgEl.innerHTML = `
-      <div class="modal" id="modalClientOrdersInner" style="max-width:1000px; width:90%; max-height:85vh; overflow:auto;">
-        <header style="display:flex; align-items:center; justify-content:space-between; gap:1rem;">
-          <h3 id="clientOrdersModalTitle" style="margin:0; color:var(--neon-blue);">Pedidos</h3>
-          <div style="display:flex; gap:.6rem;">
-            <button class="neon-btn-sm outline" id="clientOrdersAddBtn">+ Agregar Pedido</button>
-            <button class="neon-btn-sm outline" id="clientOrdersCloseBtn">Cerrar</button>
-          </div>
-        </header>
-        <hr style="margin:.8em 0; border-color:#2b3548;">
-        <div id="clientOrdersGrid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(260px,1fr)); gap:1rem; align-items:start; padding-bottom:1rem;"></div>
-      </div>
-    `;
-    document.body.appendChild(modalBgEl);
-
-    // Handlers
-    modalBgEl.onclick = function(e) {
-        if (e.target === modalBgEl) modalBgEl.style.display = 'none';
-    };
-    const closeBtn = modalBgEl.querySelector('#clientOrdersCloseBtn');
-    closeBtn.onclick = () => { modalBgEl.style.display = 'none'; };
-    const addBtn = modalBgEl.querySelector('#clientOrdersAddBtn');
-    addBtn.onclick = () => {
-        // abre modal de agregar pedido (reutiliza lógica existente)
-        orderMode = 'add';
-        orderModalTitle.textContent = "Agregar Pedido";
-        saveOrderBtn.textContent = "Agregar";
-        orderForm.reset();
-        // asegúrate de que currentClientIdx y currentClientId estén seteados
-        if (currentClientIdx == null && currentClientId == null) {
-            alert('Selecciona un cliente antes de agregar un pedido.');
-            return;
-        }
-        // Abrir modal de pedido
-        modalOrderBg.classList.add('active');
-        document.getElementById('orderService').focus();
-    };
-}
-
-// Abre modal centrado y muestra pedidos en grilla (reemplaza el comportamiento anterior del side panel)
+// Abre panel pedidos y escucha en Firestore
 window.showClientOrders = (idx) => {
     currentClientIdx = idx;
     let cli = clients[idx];
     currentClientId = cli.id;
-    // Titular
-    ensureClientOrdersModalExists();
-    const modalBgEl = document.getElementById('modalClientOrders');
-    const titleEl = document.getElementById('clientOrdersModalTitle');
-    const grid = document.getElementById('clientOrdersGrid');
-    titleEl.textContent = `Pedidos de ${cli.name}`;
-    // Rellena orders desde Firestore en tiempo real (mismo patrón que antes)
+    sidePanelTitle.textContent = `Pedidos de ${cli.name}`;
     listenOrdersRealtime(currentClientId, orders => {
         clients[currentClientIdx].orders = orders;
-        // Renderizar en la grilla
-        grid.innerHTML = '';
-        if (!orders || orders.length === 0) {
-            grid.innerHTML = `<div style="opacity:.7; grid-column:1/-1; text-align:center; padding:1.2em;">No hay pedidos registrados.</div>`;
-        } else {
-            orders.forEach((order, i) => {
-                const dias = calcularDiasRestantes(order.end);
-                const card = document.createElement('div');
-                card.className = 'order-card';
-                // Ajuste de card para que se vea en grilla (puede usar .order-card estilos existentes)
-                card.style.display = 'flex';
-                card.style.flexDirection = 'column';
-                card.style.justifyContent = 'space-between';
-                card.innerHTML = `
-                  <div>
-                    <div style="display:flex; justify-content:space-between; align-items:center;">
-                      <div style="font-weight:bold; color:var(--neon-green);">#${order.numero || (i+1)}</div>
-                      <div style="font-weight:bold; color:var(--neon-blue);">${order.service || '-'}</div>
-                    </div>
-                    <div style="margin-top:.6em;">
-                      <div style="margin-bottom:.45em;"><span style="color:var(--neon-blue); font-weight:600;">Inicio:</span> <span>${formateaFecha(order.start)}</span></div>
-                      <div style="margin-bottom:.45em;"><span style="color:var(--neon-blue); font-weight:600;">Fin:</span> <span>${formateaFecha(order.end)}</span></div>
-                      <div style="margin-bottom:.45em;"><span style="color:var(--neon-blue); font-weight:600;">Días:</span> <span>${dias >= 0 ? dias : 0}</span></div>
-                    </div>
-                  </div>
-                  <div style="display:flex; gap:.5rem; flex-wrap:wrap; margin-top:0.8em;">
-                    <button class="neon-btn-sm" onclick="showOrderDetails(${i})">Ver</button>
-                    <button class="neon-btn-sm" onclick="showEditOrder(${i})">Editar</button>
-                    <button class="neon-btn-sm outline" onclick="showDeleteOrder(${i})">Eliminar</button>
-                    <button class="neon-btn-sm outline" onclick="marcarPedidoVencido(${i})">Marcar vencido</button>
-                  </div>
-                `;
-                grid.appendChild(card);
-            });
-        }
-        // Muestra el modal centrado
-        modalBgEl.style.display = 'flex';
-        // Actualiza selectedClientForCard para la tarjeta de fidelidad si es necesario
-        selectedClientForCard = idx;
-        cardClientName.textContent = cli.name || '';
+        renderOrders();
     });
+    // Select fidelidad info!
+    selectedClientForCard = idx;
+    cardClientName.textContent = cli.name || '';
+    tabOrders.classList.add('active');
+    tabCard.classList.remove('active');
+    clientOrdersSection.style.display='';
+    clientCardSection.style.display='none';
+    sidePanelBg.classList.add('active');
+    sidePanel.scrollTop = 0;
+    renderStampPicker();
 };
-
 closeSidePanel.onclick = () => sidePanelBg.classList.remove('active');
 sidePanelBg.onclick = function(e) { if (e.target === sidePanelBg) sidePanelBg.classList.remove('active'); };
 
@@ -769,6 +686,13 @@ const cancelTemplateBtn = document.getElementById('cancelTemplateBtn');
 
 // Mostrar sección plantillas desde el menú lateral
 // Nota: no ocultamos todo el main; simplemente mostramos/ocultamos las secciones internas
+const sectionNavLinks = document.querySelectorAll('.sidebar-nav li');
+const mainContent = document.querySelector('.main-content');
+const ordersSection = document.getElementById('ordersSection');
+const fidelitySection = document.getElementById('fidelitySection');
+const centralAlertsSection = document.getElementById('centralAlertsSection');
+const clientsListEl = document.getElementById('clientsList');
+
 sectionNavLinks.forEach((item,idx) => {
     item.onclick = function() {
         sectionNavLinks.forEach(e => e.classList.remove('active'));
