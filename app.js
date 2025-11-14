@@ -629,32 +629,47 @@ function renderFidelityCard() {
     };
 }
 
-// EXPORT PNG
-exportCardBtn.onclick = ()=>{
-    html2canvas(fidelityCard).then(canvas=>{
-        const a = document.createElement('a');
-        a.download='tarjeta_'+(clients[selectedClientForCard].name||'cliente')+'.png';
-        a.href=canvas.toDataURL("image/png");
-        a.click();
-    });
-};
-// WhatsApp
-sendCardWA.onclick=()=>{
-    const nombre = cardClientName.textContent.trim()||'Cliente';
-    const mensaje = `¡Hola ${nombre}! Aquí está tu tarjeta de fidelidad.`;
-    const telefono = clients[selectedClientForCard].phone.replace(/[^0-9]/g,'');
-    const url = "https://wa.me/"+telefono+"?text="+encodeURIComponent(mensaje);
-    window.open(url,'_blank');
-};
+// EXPORT PNG (mejorada: verificación y nombre seguro)
+if (exportCardBtn) {
+    exportCardBtn.onclick = ()=> {
+        const fidelityCardEl = document.getElementById('fidelityCard');
+        if (!fidelityCardEl) { alert('No se encontró la tarjeta para exportar.'); return; }
+        html2canvas(fidelityCardEl).then(canvas=>{
+            const a = document.createElement('a');
+            const nameSafe = (clients[selectedClientForCard]?.name || 'cliente').replace(/\s+/g,'_').replace(/[^a-zA-Z0-9_\-]/g,'');
+            a.download='tarjeta_'+nameSafe+'.png';
+            a.href=canvas.toDataURL("image/png");
+            a.click();
+        }).catch(err=>{
+            console.error('Error exportando tarjeta:', err);
+            alert('No se pudo exportar la tarjeta.');
+        });
+    };
+}
+
+// WhatsApp desde tarjeta de fidelidad (verifica cliente seleccionado)
+if (sendCardWA) {
+    sendCardWA.onclick=()=>{
+        if (selectedClientForCard == null || !clients[selectedClientForCard] || !clients[selectedClientForCard].phone) {
+            alert('Selecciona primero un cliente (abre "Ver Detalles" en un cliente y luego ve a la pestaña Tarjeta).');
+            return;
+        }
+        const cli = clients[selectedClientForCard];
+        const nombre = (cli.name || 'Cliente').trim();
+        const telefono = (cli.phone || '').replace(/[^0-9]/g,'');
+        if (!telefono) { alert('Teléfono inválido.'); return; }
+        const mensaje = `¡Hola ${nombre}! Te envío tu tarjeta de fidelidad.`;
+        window.open(`https://wa.me/${telefono}?text=${encodeURIComponent(mensaje)}`, '_blank');
+    };
+}
 
 // --- Arranque ---
 listenClientsRealtime();
 
 
-
 // Al final del archivo, tras tu código principal o en la sección de navegación
 
-// ====== PLANTILLAS (Firestore-backed) ======
+// ====== PLANTILLAS (Firestore-backed OR localStorage) ======
 let templates = []; // Cada plantilla: {id, title, msg}
 let editingTemplateIdx = null;
 
@@ -705,7 +720,7 @@ function renderTemplateList() {
     }
     templates.forEach((tpl, i) => {
         templateList.innerHTML += `
-        <div class="client-card" style="margin-bottom:1.3em;padding:.82em 1em 1.1em 1.1em;">
+        <div class="client-card template-card" style="margin-bottom:1.3em;padding:.82em 1em 1.1em 1.1em;">
         <div style="font-size:1.1em;font-weight:bold;color:var(--neon-pink);margin-bottom:.45em;">${tpl.title}</div>
         <div style="font-size:.97em;opacity:.78;margin-bottom:.6em;white-space:pre-line;">${tpl.msg}</div>
         <div class="client-actions" style="margin-top:.4em;">
@@ -726,8 +741,13 @@ addTemplateBtn.onclick = () => {
     modalTemplateBg.style.display = "flex";
     templateTitle.focus();
 };
-cancelTemplateBtn.onclick = () => modalTemplateBg.style.display="none";
-modalTemplateBg.onclick = e=>{ if(e.target===modalTemplateBg) modalTemplateBg.style.display="none"};
+// Aseguramos que Cancelar cierre el modal correctamente
+if (cancelTemplateBtn) {
+    cancelTemplateBtn.onclick = () => modalTemplateBg.style.display = "none";
+}
+if (modalTemplateBg) {
+    modalTemplateBg.onclick = e=>{ if(e.target===modalTemplateBg) modalTemplateBg.style.display="none"};
+}
 
 window.editTemplate = idx => {
     editingTemplateIdx = idx;
@@ -773,9 +793,6 @@ const chooseClientList = document.getElementById('chooseClientList');
 const cancelChooseClientBtn = document.getElementById('cancelChooseClientBtn');
 let chosenTemplateMsg = "";
 
-
-
-
 // Reemplaza la función chooseClientForWA existente por esta versión
 window.chooseClientForWA = idx => {
     // carga el mensaje de la plantilla seleccionada
@@ -786,9 +803,9 @@ window.chooseClientForWA = idx => {
 
     // muestra el modal y prepara el input
     modal.style.display = "flex";
-    searchInput.value = "";
+    if (searchInput) searchInput.value = "";
     list.innerHTML = `<div style="opacity:.7">Escribe para buscar clientes por nombre, teléfono o email...</div>`;
-    searchInput.focus();
+    if (searchInput) searchInput.focus();
 
     // renderiza resultados según término
     const renderResults = (term) => {
@@ -811,6 +828,7 @@ window.chooseClientForWA = idx => {
         results.forEach(cli => {
             const phoneClean = (cli.phone || "").replace(/[^0-9]/g,'');
             const safeMsg = (chosenTemplateMsg || "").replace(/`/g,'\\`');
+            const safeName = (cli.name || "").replace(/`/g,'\\`').replace(/"/g,'&quot;');
             const el = document.createElement('div');
             el.className = 'client-card';
             el.style.marginBottom = '.7em';
@@ -820,7 +838,7 @@ window.chooseClientForWA = idx => {
             el.innerHTML = `
                 <div style="font-size:1.05em;font-weight:bold;color:var(--neon-green);margin-bottom:.12em;">${cli.name}</div>
                 <div style="font-size:.96em;opacity:.7; margin-bottom:.5em;">${cli.phone || ''}</div>
-                <button class="neon-btn-sm" style="align-self:flex-start" onclick="sendWAtoClient('${phoneClean}', \`${safeMsg}\`)">
+                <button class="neon-btn-sm" style="align-self:flex-start" onclick="sendWAtoClient('${phoneClean}', \`${safeMsg}\`, \`${safeName}\`)">
                   Enviar a ${cli.name}
                 </button>
             `;
@@ -829,14 +847,33 @@ window.chooseClientForWA = idx => {
     };
 
     // manejador de búsqueda
-    searchInput.oninput = (e) => {
-        renderResults(e.target.value);
-    };
+    if (searchInput) {
+        searchInput.oninput = (e) => {
+            renderResults(e.target.value);
+        };
+    }
 };
 
+// Enviar WhatsApp desde modal de búsqueda — incluye nombre y cierra modal después
+window.sendWAtoClient = (phone, msg, clientName) => {
+    if (!phone) {
+        alert('Teléfono inválido');
+        return;
+    }
+    // Incluye nombre al comienzo del mensaje si existe
+    const saludo = clientName ? `¡Hola ${clientName}! ` : '¡Hola! ';
+    const text = saludo + (msg || '');
+    const waUrl = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+    // Abrir en nueva pestaña
+    window.open(waUrl, '_blank');
+    // Cerrar modal de selección si está abierto
+    const modal = document.getElementById('modalChooseClient');
+    if (modal) modal.style.display = 'none';
+};
 
-
-
+// Cerrar modal elegir cliente (asegurar handlers existentes)
+if (cancelChooseClientBtn) cancelChooseClientBtn.onclick = () => { if (modalChooseClient) modalChooseClient.style.display = 'none'; };
+if (modalChooseClient) modalChooseClient.onclick = (e) => { if (e.target === modalChooseClient) modalChooseClient.style.display = 'none'; };
 
 // ====== PEDIDOS: Área general ("Pedidos") ======
 function renderOrdersSection() {
