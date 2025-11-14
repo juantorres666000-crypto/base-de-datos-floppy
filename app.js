@@ -381,36 +381,59 @@ function renderOrders() {
         return;
     }
     pedidos.forEach((order, i) => {
-        const dias = calcularDiasRestantes(order.end);
-        // Mostrar solo servicio, inicio, fin, dias restantes + boton Ver más
-        ordersList.innerHTML += `
-        <div class="order-card">
-            <div class="order-header">
-                <span class="order-num">#${order.numero || (i+1)}</span>
-                <span style="font-weight:bold;color:var(--neon-blue);">${order.service || '-'}</span>
-            </div>
-            <div class="order-info">
-                <div class="order-field">
-                    <span class="order-label">Inicio:</span>
-                    <span class="order-value">${formateaFecha(order.start)}</span>
-                </div>
-                <div class="order-field">
-                    <span class="order-label">Fin:</span>
-                    <span class="order-value">${formateaFecha(order.end)}</span>
-                </div>
-                <div class="order-field">
-                    <span class="order-label">Días restantes:</span>
-                    <span class="order-value">${dias >= 0 ? dias : 0}</span>
-                </div>
-            </div>
-            <div class="order-actions">
-                <button class="neon-btn-sm" onclick="showOrderDetails(${i})">Ver más</button>
-                <button class="neon-btn-sm outline" onclick="showDeleteOrder(${i})">Eliminar</button>
-                <button class="neon-btn-sm outline" onclick="marcarPedidoVencido(${i})">Marcar vencido</button>
-            </div>
-        </div>
-        `;
-    });
+        // app.js — Reemplaza/añade estas funciones en lugar de las antiguas
+
+// Helper: parsear una "fecha" variada a Date local (acepta:
+// - "YYYY-MM-DD" (string)
+// - Firestore Timestamp (obj con toDate())
+// - Date ya creado
+// - otros strings ISOFallback)
+function parseDateLocal(fecha) {
+  if (!fecha && fecha !== "") return null;
+  // Firestore Timestamp?
+  if (fecha && typeof fecha.toDate === 'function') {
+    return fecha.toDate();
+  }
+  // Si ya es Date
+  if (fecha instanceof Date) return fecha;
+  // Si es string tipo "YYYY-MM-DD"
+  if (typeof fecha === 'string') {
+    const m = fecha.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (m) {
+      const y = parseInt(m[1], 10);
+      const mo = parseInt(m[2], 10) - 1;
+      const d = parseInt(m[3], 10);
+      return new Date(y, mo, d); // hora local, evita shift de zona
+    }
+    // Fallback: intentar construir Date con el string (si viene con hora o distinto)
+    const fallback = new Date(fecha);
+    if (!isNaN(fallback)) return fallback;
+    return null;
+  }
+  return null;
+}
+
+// Calcula días restantes respecto a hoy usando la fecha final en hora local (considera final del día)
+function calcularDiasRestantes(fechaFin) {
+  const hoy = new Date();
+  const finDate = parseDateLocal(fechaFin);
+  if (!finDate) return 0;
+  // Ponemos fin del día para que "vence el mismo día" cuente como 0 días restantes
+  finDate.setHours(23, 59, 59, 999);
+  const msPorDia = 1000 * 60 * 60 * 24;
+  const diffMs = finDate.getTime() - hoy.getTime();
+  // Usamos Math.ceil para que fracciones de día cuenten como día completo restante
+  return Math.ceil(diffMs / msPorDia);
+}
+
+// Formatea "YYYY-MM-DD" (u otros tipos manejados) a "DD/MM/YYYY" sin shift de zona
+function formateaFecha(fechaStr) {
+  const d = parseDateLocal(fechaStr);
+  if (!d) return '';
+  const day = d.getDate().toString().padStart(2, '0');
+  const month = (d.getMonth() + 1).toString().padStart(2, '0');
+  const year = d.getFullYear();
+  return `${day}/${month}/${year}`;
 }
 
 window.marcarPedidoVencido = async function(idx) {
@@ -891,4 +914,5 @@ function renderCentralAlerts() {
 }
 
 // Puedes llamar los render desde la navegación
+
 
