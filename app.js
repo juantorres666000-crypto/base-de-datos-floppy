@@ -772,26 +772,71 @@ const modalChooseClient = document.getElementById('modalChooseClient');
 const chooseClientList = document.getElementById('chooseClientList');
 const cancelChooseClientBtn = document.getElementById('cancelChooseClientBtn');
 let chosenTemplateMsg = "";
+
+
+
+
+// Reemplaza la función chooseClientForWA existente por esta versión
 window.chooseClientForWA = idx => {
-    // Listado de clientes
-    chosenTemplateMsg = templates[idx].msg;
-    chooseClientList.innerHTML = '';
-    clients.forEach((cli,cidx) => {
-        chooseClientList.innerHTML += `
-        <div class="client-card" style="margin-bottom:.7em;padding:.6em;">
-            <div style="font-size:1.05em;font-weight:bold;color:var(--neon-green);margin-bottom:.12em;">${cli.name}</div>
-            <div style="font-size:.96em;opacity:.7;">${cli.phone}</div>
-            <button class="neon-btn-sm" style="margin-top:.44em;" onclick="sendWAtoClient('${cli.phone.replace(/[^0-9]/g,'')}', \`${chosenTemplateMsg.replace(/`/g, '\\`')}\`)">Enviar a ${cli.name}</button>
-        </div>`;
-    });
-    modalChooseClient.style.display = "flex";
+    // carga el mensaje de la plantilla seleccionada
+    chosenTemplateMsg = templates[idx].msg || "";
+    const modal = document.getElementById('modalChooseClient');
+    const searchInput = document.getElementById('chooseClientSearch');
+    const list = document.getElementById('chooseClientList');
+
+    // muestra el modal y prepara el input
+    modal.style.display = "flex";
+    searchInput.value = "";
+    list.innerHTML = `<div style="opacity:.7">Escribe para buscar clientes por nombre, teléfono o email...</div>`;
+    searchInput.focus();
+
+    // renderiza resultados según término
+    const renderResults = (term) => {
+        const q = (term||"").toLowerCase().trim();
+        list.innerHTML = "";
+        if (!q) {
+            list.innerHTML = `<div style="opacity:.7">Escribe para buscar clientes por nombre, teléfono o email...</div>`;
+            return;
+        }
+        const results = clients.filter(cli =>
+            (cli.name && cli.name.toLowerCase().includes(q)) ||
+            (cli.phone && cli.phone.toLowerCase().includes(q)) ||
+            (cli.email && cli.email.toLowerCase().includes(q))
+        );
+        if (!results.length) {
+            list.innerHTML = `<div style="opacity:.7">No se encontraron clientes</div>`;
+            return;
+        }
+        // crea elementos para cada resultado
+        results.forEach(cli => {
+            const phoneClean = (cli.phone || "").replace(/[^0-9]/g,'');
+            const safeMsg = (chosenTemplateMsg || "").replace(/`/g,'\\`');
+            const el = document.createElement('div');
+            el.className = 'client-card';
+            el.style.marginBottom = '.7em';
+            el.style.padding = '.6em';
+            el.style.display = 'flex';
+            el.style.flexDirection = 'column';
+            el.innerHTML = `
+                <div style="font-size:1.05em;font-weight:bold;color:var(--neon-green);margin-bottom:.12em;">${cli.name}</div>
+                <div style="font-size:.96em;opacity:.7; margin-bottom:.5em;">${cli.phone || ''}</div>
+                <button class="neon-btn-sm" style="align-self:flex-start" onclick="sendWAtoClient('${phoneClean}', \`${safeMsg}\`)">
+                  Enviar a ${cli.name}
+                </button>
+            `;
+            list.appendChild(el);
+        });
+    };
+
+    // manejador de búsqueda
+    searchInput.oninput = (e) => {
+        renderResults(e.target.value);
+    };
 };
-cancelChooseClientBtn.onclick = ()=> modalChooseClient.style.display="none";
-modalChooseClient.onclick = e=>{ if(e.target===modalChooseClient) modalChooseClient.style.display="none"};
-window.sendWAtoClient = (phone,msg) => {
-    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(msg)}`,'_blank');
-    modalChooseClient.style.display="none";
-};
+
+
+
+
 
 // ====== PEDIDOS: Área general ("Pedidos") ======
 function renderOrdersSection() {
