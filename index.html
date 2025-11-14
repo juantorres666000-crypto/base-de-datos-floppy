@@ -98,17 +98,24 @@
 </div>
 
 
-<!-- Modal para elegir cliente -->
+<!-- Modal para elegir cliente (reemplaza el bloque anterior con id="modalChooseClient") -->
 <div class="modal-bg" id="modalChooseClient" style="display:none;">
   <div class="modal">
     <h3>Selecciona el cliente</h3>
-    <div id="chooseClientList"></div>
-    <div class="modal-actions">
+
+    <!-- Campo de búsqueda: el usuario escribe y aparecen los resultados -->
+    <label>Buscar cliente
+      <input type="text" id="chooseClientSearch" placeholder="Escribe nombre, teléfono o email..." style="width:100%; margin-top:.4em; padding:.5em;">
+    </label>
+
+    <!-- Lista que mostrará SOLO los resultados de la búsqueda -->
+    <div id="chooseClientList" style="max-height:360px; overflow:auto; margin-top:.6em;"></div>
+
+    <div class="modal-actions" style="margin-top:.8em;">
       <button type="button" class="neon-btn-sm outline" id="cancelChooseClientBtn">Cancelar</button>
     </div>
   </div>
 </div>
-    </div>
 
     <!-- Modal: Agregar/Editar Cliente (el mismo que antes) -->
     <div class="modal-bg" id="modalBg">
@@ -267,5 +274,6 @@ const firebaseConfig = {
     <script src="app.js"></script>
 </body>
 </html>
+
 
 
